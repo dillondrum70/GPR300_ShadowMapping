@@ -33,6 +33,8 @@ public:
 
 	void Create();
 	void AddColorAttachment(Texture& buffer, GLenum attachmentNum);
+	void AddColorAttachment(RenderBuffer& buffer, GLenum attachmentNum);
+	void AddDepthAttachment(Texture& buffer);
 	void AddDepthAttachment(RenderBuffer& buffer);
 	void Bind();
 	void Unbind(glm::vec2 viewportDimensions);

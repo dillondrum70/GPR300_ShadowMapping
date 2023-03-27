@@ -246,13 +246,16 @@ int main() {
 
 	//If this is created after all texutres are loaded (and all the textures haven't been used) then it shouldn't overwrite or be overwritten by any textures
 	Texture colorBuffer;
-	colorBuffer.CreateTexture(SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGBA, GL_FLOAT);
+	colorBuffer.CreateTexture(GL_RGBA, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGBA, GL_FLOAT);
 
 	Texture secondColorBuffer;
-	secondColorBuffer.CreateTexture(SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGBA, GL_FLOAT);
+	secondColorBuffer.CreateTexture(GL_RGBA, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGBA, GL_FLOAT);
 	
-	RenderBuffer depthBuffer;
-	depthBuffer.Create(SCREEN_WIDTH, SCREEN_HEIGHT);
+	Texture depthBuffer;
+	depthBuffer.CreateTexture(GL_DEPTH_COMPONENT32F, SCREEN_WIDTH, SCREEN_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT);
+
+	/*RenderBuffer depthBuffer;
+	depthBuffer.Create(SCREEN_WIDTH, SCREEN_HEIGHT);*/
 
 	FramebufferObject fbo;
 	fbo.Create();

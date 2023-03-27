@@ -61,7 +61,7 @@ public:
 	void SetNormalMap(Texture* tex) { normalMap = tex; }
 
 	GLuint CreateTexture(const char* texFilePath);
-	GLuint CreateTexture(unsigned int width, unsigned int height, GLenum format, GLenum type);
+	GLuint CreateTexture(GLenum internalFormat, unsigned int width, unsigned int height, GLenum format, GLenum type);
 
 	void Destroy();
 

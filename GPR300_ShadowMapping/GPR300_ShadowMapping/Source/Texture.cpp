@@ -38,7 +38,7 @@ GLuint Texture::CreateTexture(const char* texFilePath)
 	return texture;
 }
 
-GLuint Texture::CreateTexture(unsigned int width, unsigned int height, GLenum format, GLenum type)
+GLuint Texture::CreateTexture(GLenum internalFormat, unsigned int width, unsigned int height, GLenum format, GLenum type)
 {
 	Destroy();
 
@@ -50,7 +50,7 @@ GLuint Texture::CreateTexture(unsigned int width, unsigned int height, GLenum fo
 
 	glBindTexture(GL_TEXTURE_2D, texture);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, format, type, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, NULL);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

@@ -38,9 +38,28 @@ void FramebufferObject::AddColorAttachment(Texture& buffer, GLenum attachmentNum
 {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentNum, GL_TEXTURE_2D, buffer.GetTexture(), 0);
 
+	/*if (screenDimensions == glm::vec2(0))
+	{
+
+	}*/
 	screenDimensions = buffer.GetDimensions();
 
 	colorAttachments.push_back(buffer.GetTexture());
+}
+
+void FramebufferObject::AddColorAttachment(RenderBuffer& buffer, GLenum attachmentNum)
+{
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachmentNum, GL_RENDERBUFFER, buffer.GetRenderBuffer());
+
+	colorAttachments.push_back(buffer.GetRenderBuffer());
+}
+
+
+void FramebufferObject::AddDepthAttachment(Texture& buffer)
+{
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, buffer.GetTexture(), 0);
+
+	depthAttachments.push_back(buffer.GetTexture());
 }
 
 
