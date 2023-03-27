@@ -32,7 +32,11 @@
 
 #include "FramebufferObject.h"
 
-void drawSence(Shader* shader, glm::mat4 viewProjection);
+void drawScene(Shader* shader, glm::mat4 view, glm::mat4 projection, 
+	ew::Mesh& cubeMesh, ew::Mesh& sphereMesh, ew::Mesh& cylinderMesh, ew::Mesh& planeMesh);
+
+void drawLights(Shader* shader, glm::mat4 view, glm::mat4 projection, 
+	ew::Mesh& cubeMesh, ew::Mesh& sphereMesh, ew::Mesh& cylinderMesh, ew::Mesh& planeMesh);
 
 void processInput(GLFWwindow* window);
 void resizeFrameBufferCallback(GLFWwindow* window, int width, int height);
@@ -107,6 +111,15 @@ int currentTextureIndex = 0;
 glm::vec3 brightColor = glm::vec3(1, 1, 1);
 float brightnessThreshold = .95f;
 
+TextureManager texManager;
+
+ew::Transform cubeTransform;
+ew::Transform sphereTransform;
+ew::Transform planeTransform;
+ew::Transform cylinderTransform;
+ew::Transform lightTransform;
+ew::Transform quadTransform;
+
 int main() {
 	if (!glfwInit()) {
 		printf("glfw failed to init");
@@ -175,7 +188,7 @@ int main() {
 	glDepthFunc(GL_LESS);
 
 	//Load in textures and add them to array
-	TextureManager texManager;
+	
 	texManager.AddTexture((ASSET_PATH + TEX_FILENAME_DIAMOND_PLATE).c_str(), (ASSET_PATH + NORM_FILENAME_DIAMOND_PLATE).c_str());
 	texManager.AddTexture((ASSET_PATH + TEX_FILENAME_PAVING_STONES).c_str(), (ASSET_PATH + NORM_FILENAME_PAVING_STONES).c_str());
 
@@ -188,13 +201,6 @@ int main() {
 	}
 
 	//Initialize shape transforms
-	ew::Transform cubeTransform;
-	ew::Transform sphereTransform;
-	ew::Transform planeTransform;
-	ew::Transform cylinderTransform;
-	ew::Transform lightTransform;
-	ew::Transform quadTransform;
-
 	cubeTransform.position = glm::vec3(-2.0f, 0.0f, 0.0f);
 	sphereTransform.position = glm::vec3(0.0f, 0.0f, 0.0f);
 
@@ -301,153 +307,13 @@ int main() {
 		GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 		glDrawBuffers(2, buffers);
 
-		//Draw
-		litShader.use();
-		litShader.setVec3("_BrightColor", brightColor);	//Used in bloom
-		litShader.setFloat("_BrightnessThreshold", brightnessThreshold);	//Used in bloom
-		litShader.setMat4("_Projection", camera.getProjectionMatrix());
-		litShader.setMat4("_View", camera.getViewMatrix());
+		glm::mat4 view = camera.getViewMatrix();
+		glm::mat4 projection = camera.getProjectionMatrix();
 
-		//Textures
-		litShader.setInt("_CurrentTexture", currentTextureIndex);
-
-		for (size_t i = 0; i < texManager.textureCount; i++)
-		{
-			texManager.textures[i].offset += texManager.textures[i].scrollSpeed * deltaTime;
-			litShader.setVec2("_Textures[" + std::to_string(i) + "].scaleFactor", texManager.textures[i].scaleFactor);
-			litShader.setVec2("_Textures[" + std::to_string(i) + "].offset", texManager.textures[i].offset);
-		}
-
-		//Attenuation Uniforms
-		litShader.setFloat("_Attenuation.constant", constantAttenuation);
-		litShader.setFloat("_Attenuation.linear", linearAttenuation);
-		litShader.setFloat("_Attenuation.quadratic", quadraticAttenuation);
-
-		//Point Light Uniforms
-		litShader.setInt("_UsedPointLights", pointLightCount);
-		
-		for (int i = 0; i < pointLightCount; i++)
-		{
-			if (!manuallyMoveLights)
-			{
-				pointLights[i].pos.x = pointLightRadius * (cos(2 * glm::pi<float>() * (i / (float)pointLightCount)));
-				pointLights[i].pos.y = pointLightHeight;
-				pointLights[i].pos.z = pointLightRadius * (sin(2 * glm::pi<float>() * (i / (float)pointLightCount)));
-			}
-
-			litShader.setVec3("_PointLight[" + std::to_string(i) + "].pos", pointLights[i].pos);
-			litShader.setVec3("_PointLight[" + std::to_string(i) + "].color", pointLights[i].color);
-			litShader.setFloat("_PointLight[" + std::to_string(i) + "].intensity", pointLights[i].intensity);
-		}
-
-		//Directional Light Uniforms
-		litShader.setInt("_UsedDirectionalLights", directionalLightCount);
-
-		for (int i = 0; i < directionalLightCount; i++)
-		{
-			if (!manuallyMoveLights)
-			{
-				float angle = glm::sin(glm::radians(-directionalLightAngle));
-
-				directionalLights[i].dir = glm::vec3(
-					//Defines the direction this axis is rotated towards			Defines what angle to rotate by
-					(cos(2 * glm::pi<float>() * (i / (float)directionalLightCount))) * angle,
-					1,
-					(sin(2 * glm::pi<float>() * (i / (float)directionalLightCount))) * angle
-				);
-			}
-
-			litShader.setVec3("_DirectionalLight[" + std::to_string(i) + "].dir", directionalLights[i].dir);
-			litShader.setVec3("_DirectionalLight[" + std::to_string(i) + "].color", directionalLights[i].color);
-			litShader.setFloat("_DirectionalLight[" + std::to_string(i) + "].intensity", directionalLights[i].intensity);
-		}
-
-		//Spotlight Uniforms
-		litShader.setInt("_UsedSpotlights", spotlightCount);
-
-		for (int i = 0; i < spotlightCount; i++)
-		{
-			if (!manuallyMoveLights)
-			{
-				spotlights[i].pos.x = spotlightRadius * (cos(2 * glm::pi<float>() * (i / (float)spotlightCount)));
-				spotlights[i].pos.y = spotlightHeight;
-				spotlights[i].pos.z = spotlightRadius * (sin(2 * glm::pi<float>() * (i / (float)spotlightCount)));
-				
-				spotlights[i].dir = glm::vec3(
-					//Defines the direction this axis is rotated towards			Defines what angle to rotate by
-					(cos(2 * glm::pi<float>() * (i / (float)spotlightCount))) * glm::sin(glm::radians(-spotlightAngle)),
-					-1,
-					(sin(2 * glm::pi<float>() * (i / (float)spotlightCount))) * glm::sin(glm::radians(-spotlightAngle))
-				);
-			}
-
-			litShader.setVec3("_Spotlight[" + std::to_string(i) + "].pos", spotlights[i].pos);
-			litShader.setVec3("_Spotlight[" + std::to_string(i) + "].dir", spotlights[i].dir);
-			litShader.setVec3("_Spotlight[" + std::to_string(i) + "].color", spotlights[i].color);
-			litShader.setFloat("_Spotlight[" + std::to_string(i) + "].intensity", spotlights[i].intensity);
-			litShader.setFloat("_Spotlight[" + std::to_string(i) + "].range", spotlights[i].range);
-			litShader.setFloat("_Spotlight[" + std::to_string(i) + "].minAngle", glm::cos(glm::radians(spotlights[i].innerAngle)));
-			litShader.setFloat("_Spotlight[" + std::to_string(i) + "].maxAngle", glm::cos(glm::radians(spotlights[i].outerAngle)));
-			litShader.setFloat("_Spotlight[" + std::to_string(i) + "].falloff", spotlights[i].angleFalloff);
-		}
-
-		//Material Uniforms
-		litShader.setVec3("_Mat.color", defaultMat.color);
-		litShader.setFloat("_Mat.ambientCoefficient", defaultMat.ambientK);
-		litShader.setFloat("_Mat.diffuseCoefficient", defaultMat.diffuseK);
-		litShader.setFloat("_Mat.specularCoefficient", defaultMat.specularK);
-		litShader.setFloat("_Mat.shininess", defaultMat.shininess);
-		litShader.setFloat("_Mat.normalIntensity", defaultMat.normalIntensity);
-
-		litShader.setVec3("_CamPos", camera.getPosition());
-
-		litShader.setInt("_Phong", phong);
-
-		//Draw cube
-		glm::mat4 cubeModel = cubeTransform.getModelMatrix();
-		litShader.setMat4("_Model", cubeModel);
-		litShader.setMat4("_NormalMatrix", glm::transpose(glm::inverse(cubeModel)));
-		cubeMesh.draw();
-
-		////Draw sphere
-		glm::mat4 sphereModel = sphereTransform.getModelMatrix();
-		litShader.setMat4("_Model", sphereModel);
-		litShader.setMat4("_NormalMatrix", glm::transpose(glm::inverse(sphereModel)));
-		sphereMesh.draw();
-
-		//Draw cylinder
-		glm::mat4 cylinderModel = cylinderTransform.getModelMatrix();
-		litShader.setMat4("_Model", cylinderModel);
-		litShader.setMat4("_NormalMatrix", glm::transpose(glm::inverse(cylinderModel)));
-		cylinderMesh.draw();
-
-		//Draw plane
-		glm::mat4 planeModel = planeTransform.getModelMatrix();
-		litShader.setMat4("_Model", planeModel);
-		litShader.setMat4("_NormalMatrix", glm::transpose(glm::inverse(planeModel)));
-		planeMesh.draw();
+		drawScene(&litShader, view, projection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
 
 		//Draw light as a small sphere using unlit shader, ironically.
-		unlitShader.use();
-		unlitShader.setVec3("_BrightColor", brightColor);	//Used in bloom
-		unlitShader.setFloat("_BrightnessThreshold", brightnessThreshold);	//Used in bloom
-		unlitShader.setMat4("_Projection", camera.getProjectionMatrix());
-		unlitShader.setMat4("_View", camera.getViewMatrix());
-		for (size_t i = 0; i < pointLightCount; i++)
-		{
-			unlitShader.setMat4("_Model", glm::translate(glm::mat4(1), pointLights[i].pos) * glm::scale(glm::mat4(1), glm::vec3(lightScale)));
-			unlitShader.setVec3("_Color", pointLights[i].color);
-			sphereMesh.draw();
-		}
-
-		for (size_t i = 0; i < spotlightCount; i++)
-		{
-			glm::mat4 rotation = ew::rotateX(-asin(spotlights[i].dir.z)) * ew::rotateY(acos(spotlights[i].dir.y)) * ew::rotateZ(-asin(spotlights[i].dir.x));
-
-			unlitShader.setMat4("_Model", glm::translate(glm::mat4(1), spotlights[i].pos)* rotation * glm::scale(glm::mat4(1), glm::vec3(lightScale)));
-			unlitShader.setVec3("_Color", spotlights[i].color);
-			cylinderMesh.draw();
-		}
+		drawLights(&unlitShader, view, projection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
 
 		//After drawing, bind to default framebuffer, clear it, and draw the fullscreen quad with the shader
 		fbo.Unbind(glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
@@ -603,9 +469,158 @@ int main() {
 }
 
 //Author: Dillon Drummond
-void drawSence(Shader* shader, glm::mat4 viewProjection)
+void drawScene(Shader* shader, glm::mat4 view, glm::mat4 projection, ew::Mesh& cubeMesh, ew::Mesh& sphereMesh, ew::Mesh& cylinderMesh, ew::Mesh& planeMesh)
 {
+	//Draw
+	shader->use();
+	shader->setVec3("_BrightColor", brightColor);	//Used in bloom
+	shader->setFloat("_BrightnessThreshold", brightnessThreshold);	//Used in bloom
+	shader->setMat4("_Projection", projection);
+	shader->setMat4("_View", view);
 
+	//Textures
+	shader->setInt("_CurrentTexture", currentTextureIndex);
+
+	for (size_t i = 0; i < texManager.textureCount; i++)
+	{
+		texManager.textures[i].offset += texManager.textures[i].scrollSpeed * deltaTime;
+		shader->setVec2("_Textures[" + std::to_string(i) + "].scaleFactor", texManager.textures[i].scaleFactor);
+		shader->setVec2("_Textures[" + std::to_string(i) + "].offset", texManager.textures[i].offset);
+	}
+
+	//Attenuation Uniforms
+	shader->setFloat("_Attenuation.constant", constantAttenuation);
+	shader->setFloat("_Attenuation.linear", linearAttenuation);
+	shader->setFloat("_Attenuation.quadratic", quadraticAttenuation);
+
+	//Point Light Uniforms
+	shader->setInt("_UsedPointLights", pointLightCount);
+
+	for (int i = 0; i < pointLightCount; i++)
+	{
+		if (!manuallyMoveLights)
+		{
+			pointLights[i].pos.x = pointLightRadius * (cos(2 * glm::pi<float>() * (i / (float)pointLightCount)));
+			pointLights[i].pos.y = pointLightHeight;
+			pointLights[i].pos.z = pointLightRadius * (sin(2 * glm::pi<float>() * (i / (float)pointLightCount)));
+		}
+
+		shader->setVec3("_PointLight[" + std::to_string(i) + "].pos", pointLights[i].pos);
+		shader->setVec3("_PointLight[" + std::to_string(i) + "].color", pointLights[i].color);
+		shader->setFloat("_PointLight[" + std::to_string(i) + "].intensity", pointLights[i].intensity);
+	}
+
+	//Directional Light Uniforms
+	shader->setInt("_UsedDirectionalLights", directionalLightCount);
+
+	for (int i = 0; i < directionalLightCount; i++)
+	{
+		if (!manuallyMoveLights)
+		{
+			float angle = glm::sin(glm::radians(-directionalLightAngle));
+
+			directionalLights[i].dir = glm::vec3(
+				//Defines the direction this axis is rotated towards			Defines what angle to rotate by
+				(cos(2 * glm::pi<float>() * (i / (float)directionalLightCount))) * angle,
+				1,
+				(sin(2 * glm::pi<float>() * (i / (float)directionalLightCount))) * angle
+			);
+		}
+
+		shader->setVec3("_DirectionalLight[" + std::to_string(i) + "].dir", directionalLights[i].dir);
+		shader->setVec3("_DirectionalLight[" + std::to_string(i) + "].color", directionalLights[i].color);
+		shader->setFloat("_DirectionalLight[" + std::to_string(i) + "].intensity", directionalLights[i].intensity);
+	}
+
+	//Spotlight Uniforms
+	shader->setInt("_UsedSpotlights", spotlightCount);
+
+	for (int i = 0; i < spotlightCount; i++)
+	{
+		if (!manuallyMoveLights)
+		{
+			spotlights[i].pos.x = spotlightRadius * (cos(2 * glm::pi<float>() * (i / (float)spotlightCount)));
+			spotlights[i].pos.y = spotlightHeight;
+			spotlights[i].pos.z = spotlightRadius * (sin(2 * glm::pi<float>() * (i / (float)spotlightCount)));
+
+			spotlights[i].dir = glm::vec3(
+				//Defines the direction this axis is rotated towards			Defines what angle to rotate by
+				(cos(2 * glm::pi<float>() * (i / (float)spotlightCount))) * glm::sin(glm::radians(-spotlightAngle)),
+				-1,
+				(sin(2 * glm::pi<float>() * (i / (float)spotlightCount))) * glm::sin(glm::radians(-spotlightAngle))
+			);
+		}
+
+		shader->setVec3("_Spotlight[" + std::to_string(i) + "].pos", spotlights[i].pos);
+		shader->setVec3("_Spotlight[" + std::to_string(i) + "].dir", spotlights[i].dir);
+		shader->setVec3("_Spotlight[" + std::to_string(i) + "].color", spotlights[i].color);
+		shader->setFloat("_Spotlight[" + std::to_string(i) + "].intensity", spotlights[i].intensity);
+		shader->setFloat("_Spotlight[" + std::to_string(i) + "].range", spotlights[i].range);
+		shader->setFloat("_Spotlight[" + std::to_string(i) + "].minAngle", glm::cos(glm::radians(spotlights[i].innerAngle)));
+		shader->setFloat("_Spotlight[" + std::to_string(i) + "].maxAngle", glm::cos(glm::radians(spotlights[i].outerAngle)));
+		shader->setFloat("_Spotlight[" + std::to_string(i) + "].falloff", spotlights[i].angleFalloff);
+	}
+
+	//Material Uniforms
+	shader->setVec3("_Mat.color", defaultMat.color);
+	shader->setFloat("_Mat.ambientCoefficient", defaultMat.ambientK);
+	shader->setFloat("_Mat.diffuseCoefficient", defaultMat.diffuseK);
+	shader->setFloat("_Mat.specularCoefficient", defaultMat.specularK);
+	shader->setFloat("_Mat.shininess", defaultMat.shininess);
+	shader->setFloat("_Mat.normalIntensity", defaultMat.normalIntensity);
+
+	shader->setVec3("_CamPos", camera.getPosition());
+
+	shader->setInt("_Phong", phong);
+
+	//Draw cube
+	glm::mat4 cubeModel = cubeTransform.getModelMatrix();
+	shader->setMat4("_Model", cubeModel);
+	shader->setMat4("_NormalMatrix", glm::transpose(glm::inverse(cubeModel)));
+	cubeMesh.draw();
+
+	////Draw sphere
+	glm::mat4 sphereModel = sphereTransform.getModelMatrix();
+	shader->setMat4("_Model", sphereModel);
+	shader->setMat4("_NormalMatrix", glm::transpose(glm::inverse(sphereModel)));
+	sphereMesh.draw();
+
+	//Draw cylinder
+	glm::mat4 cylinderModel = cylinderTransform.getModelMatrix();
+	shader->setMat4("_Model", cylinderModel);
+	shader->setMat4("_NormalMatrix", glm::transpose(glm::inverse(cylinderModel)));
+	cylinderMesh.draw();
+
+	//Draw plane
+	glm::mat4 planeModel = planeTransform.getModelMatrix();
+	shader->setMat4("_Model", planeModel);
+	shader->setMat4("_NormalMatrix", glm::transpose(glm::inverse(planeModel)));
+	planeMesh.draw();
+}
+
+void drawLights(Shader* shader, glm::mat4 view, glm::mat4 projection,
+	ew::Mesh& cubeMesh, ew::Mesh& sphereMesh, ew::Mesh& cylinderMesh, ew::Mesh& planeMesh)
+{
+	shader->use();
+	shader->setVec3("_BrightColor", brightColor);	//Used in bloom
+	shader->setFloat("_BrightnessThreshold", brightnessThreshold);	//Used in bloom
+	shader->setMat4("_Projection", projection);
+	shader->setMat4("_View", view);
+	for (size_t i = 0; i < pointLightCount; i++)
+	{
+		shader->setMat4("_Model", glm::translate(glm::mat4(1), pointLights[i].pos) * glm::scale(glm::mat4(1), glm::vec3(lightScale)));
+		shader->setVec3("_Color", pointLights[i].color);
+		sphereMesh.draw();
+	}
+
+	for (size_t i = 0; i < spotlightCount; i++)
+	{
+		glm::mat4 rotation = ew::rotateX(-asin(spotlights[i].dir.z)) * ew::rotateY(acos(spotlights[i].dir.y)) * ew::rotateZ(-asin(spotlights[i].dir.x));
+
+		shader->setMat4("_Model", glm::translate(glm::mat4(1), spotlights[i].pos) * rotation * glm::scale(glm::mat4(1), glm::vec3(lightScale)));
+		shader->setVec3("_Color", spotlights[i].color);
+		cylinderMesh.draw();
+	}
 }
 
 //Author: Eric Winebrenner
