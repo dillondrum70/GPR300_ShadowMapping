@@ -6,6 +6,8 @@ void ColorBuffer::Create(int screenWidth, int screenHeight)
 
 	screenDimensions = glm::vec2(screenWidth, screenHeight);
 
+	glActiveTexture(GL_TEXTURE31);
+
 	glGenTextures(1, &texture);
 
 	glBindTexture(GL_TEXTURE_2D, texture);

@@ -32,6 +32,8 @@
 
 #include "FramebufferObject.h"
 
+void drawSence(Shader* shader, glm::mat4 viewProjection);
+
 void processInput(GLFWwindow* window);
 void resizeFrameBufferCallback(GLFWwindow* window, int width, int height);
 void keyboardCallback(GLFWwindow* window, int keycode, int scancode, int action, int mods);
@@ -68,13 +70,13 @@ float lightScale = .5f;
 
 const int MAX_POINT_LIGHTS = 8;
 PointLight pointLights[MAX_POINT_LIGHTS];
-int pointLightCount = 4;
+int pointLightCount = 0;
 float pointLightRadius = 5.f;
 float pointLightHeight = 2.f;
 
 const int MAX_DIRECTIONAL_LIGHTS = 8;
 DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
-int directionalLightCount = 0;
+int directionalLightCount = 1;
 float directionalLightAngle = 180.f;	//Angle towards center, 0 is down, + is towards the center, - is away from the center
 
 const int MAX_SPOTLIGHTS = 8;
@@ -181,8 +183,8 @@ int main() {
 	for (size_t i = 0; i < texManager.textureCount; i++)
 	{
 		//Set texture sampler to texture unit number
-		litShader.setInt("_Textures[" + std::to_string(i) + "].texSampler", i);
-		litShader.setInt("_Textures[" + std::to_string(i) + "].normSampler", (i + MAX_TEXTURES));	//Normals stored in back half of the 32 textures OpenGL supports
+		litShader.setInt("_Textures[" + std::to_string(i) + "].texSampler", (i * 2));
+		litShader.setInt("_Textures[" + std::to_string(i) + "].normSampler", ((i * 2) + 1));	//Normals stored in back half of the 32 textures OpenGL supports
 	}
 
 	//Initialize shape transforms
@@ -470,7 +472,7 @@ int main() {
 
 		//Material
 		defaultMat.ExposeImGui();
-
+		
 		//General Settings
 		ImGui::SetNextWindowSize(ImVec2(0, 0));	//Size to fit content
 		ImGui::Begin("Settings");
@@ -497,27 +499,27 @@ int main() {
 		ImGui::End();
 
 		//Point Lights
-		ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_FirstUseEver);	//Size to fit content
-		ImGui::Begin("Point Lights");
+		//ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_FirstUseEver);	//Size to fit content
+		//ImGui::Begin("Point Lights");
 
-		ImGui::SliderInt("Light Count", &pointLightCount, 0, MAX_POINT_LIGHTS);
+		//ImGui::SliderInt("Light Count", &pointLightCount, 0, MAX_POINT_LIGHTS);
 
-		if (!manuallyMoveLights)
-		{
-			ImGui::SliderFloat("Light Array Radius", &pointLightRadius, 0.f, 100.f);
-			ImGui::SliderFloat("Light Array Height", &pointLightHeight, -5.f, 30.f);
-		}
+		//if (!manuallyMoveLights)
+		//{
+		//	ImGui::SliderFloat("Light Array Radius", &pointLightRadius, 0.f, 100.f);
+		//	ImGui::SliderFloat("Light Array Height", &pointLightHeight, -5.f, 30.f);
+		//}
 
-		for (size_t i = 0; i < pointLightCount; i++)
-		{
-			ImGui::Text(("Point Light" + std::to_string(i)).c_str());
+		//for (size_t i = 0; i < pointLightCount; i++)
+		//{
+		//	ImGui::Text(("Point Light" + std::to_string(i)).c_str());
 
-			ImGui::PushID(i);
-			pointLights[i].ExposeImGui(manuallyMoveLights);
-			ImGui::PopID();
-		}
+		//	ImGui::PushID(i);
+		//	pointLights[i].ExposeImGui(manuallyMoveLights);
+		//	ImGui::PopID();
+		//}
 
-		ImGui::End();
+		//ImGui::End();
 
 		//Directional Light
 		ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_FirstUseEver);	//Size to fit content
@@ -542,28 +544,28 @@ int main() {
 		ImGui::End();
 
 		//Spotlight
-		ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_FirstUseEver);	//Size to fit content
-		ImGui::Begin("Spotlight");
+		//ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_FirstUseEver);	//Size to fit content
+		//ImGui::Begin("Spotlight");
 
-		ImGui::SliderInt("Light Count", &spotlightCount, 0, MAX_SPOTLIGHTS);
+		//ImGui::SliderInt("Light Count", &spotlightCount, 0, MAX_SPOTLIGHTS);
 
-		if (!manuallyMoveLights)
-		{
-			ImGui::SliderFloat("Light Array Radius", &spotlightRadius, 0.f, 100.f);
-			ImGui::SliderFloat("Light Array Height", &spotlightHeight, -5.f, 30.f);
-			ImGui::SliderFloat("Light Array Angle", &spotlightAngle, -60.f, 60.f);
-		}
+		//if (!manuallyMoveLights)
+		//{
+		//	ImGui::SliderFloat("Light Array Radius", &spotlightRadius, 0.f, 100.f);
+		//	ImGui::SliderFloat("Light Array Height", &spotlightHeight, -5.f, 30.f);
+		//	ImGui::SliderFloat("Light Array Angle", &spotlightAngle, -60.f, 60.f);
+		//}
 
-		for (size_t i = 0; i < spotlightCount; i++)
-		{
-			ImGui::Text(("Spotlight " + std::to_string(i)).c_str());
+		//for (size_t i = 0; i < spotlightCount; i++)
+		//{
+		//	ImGui::Text(("Spotlight " + std::to_string(i)).c_str());
 
-			ImGui::PushID(i);
-			spotlights[i].ExposeImGui(manuallyMoveLights);
-			ImGui::PopID();
-		}
+		//	ImGui::PushID(i);
+		//	spotlights[i].ExposeImGui(manuallyMoveLights);
+		//	ImGui::PopID();
+		//}
 
-		ImGui::End();
+		//ImGui::End();
 
 		//Texture
 		ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_FirstUseEver);	//Size to fit content
@@ -599,6 +601,13 @@ int main() {
 	glfwTerminate();
 	return 0;
 }
+
+//Author: Dillon Drummond
+void drawSence(Shader* shader, glm::mat4 viewProjection)
+{
+
+}
+
 //Author: Eric Winebrenner
 void resizeFrameBufferCallback(GLFWwindow* window, int width, int height)
 {

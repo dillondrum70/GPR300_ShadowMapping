@@ -17,6 +17,8 @@ GLuint Texture::CreateTexture(const char* texFilePath, const char* normFilePath)
 	//Use if texture is vertically flipped
 	//stbi_set_flip_vertically_on_load(true);
 
+	
+
 	//Load in our texture data from the file path
 	textureData = stbi_load(texFilePath, &dimensions.x, &dimensions.y, &texFileChannels, desiredChannels);
 

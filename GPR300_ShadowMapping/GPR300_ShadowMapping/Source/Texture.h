@@ -43,7 +43,7 @@ private:
 
 public:
 	GLenum texNumber = GL_TEXTURE0;
-	GLenum normNumber = GL_TEXTURE16;
+	GLenum normNumber = GL_TEXTURE1;
 
 	glm::vec2 scaleFactor = glm::vec2(1);
 
