@@ -28,7 +28,6 @@ namespace ew {
 	/// </summary>
 	class Mesh {
 	public:
-		Mesh() {};
 		Mesh(MeshData* meshData);
 		~Mesh();
 		void draw();

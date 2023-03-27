@@ -100,6 +100,8 @@ bool phong = true;
 
 bool wireFrame = false;
 
+bool debugQuadEnabled = true;
+
 const std::string ASSET_PATH = "./Textures/";
 const std::string TEX_FILENAME_DIAMOND_PLATE = "DiamondPlate006C_4K_Color.jpg";
 const std::string NORM_FILENAME_DIAMOND_PLATE = "DiamondPlate006C_4K_NormalGL.jpg";
@@ -119,6 +121,7 @@ ew::Transform planeTransform;
 ew::Transform cylinderTransform;
 ew::Transform lightTransform;
 ew::Transform quadTransform;
+ew::Transform debugQuadTransform;
 
 int main() {
 	if (!glfwInit()) {
@@ -158,6 +161,8 @@ int main() {
 	//Used to draw light sphere
 	Shader unlitShader("shaders/defaultLit.vert", "shaders/unlit.frag");
 
+	Shader depthShader("shaders/depth.vert", "shaders/depth.frag");
+
 	ew::MeshData cubeMeshData;
 	ew::createCube(1.0f, 1.0f, 1.0f, cubeMeshData);
 	ew::MeshData sphereMeshData;
@@ -168,12 +173,15 @@ int main() {
 	ew::createPlane(1.0f, 1.0f, planeMeshData);
 	ew::MeshData quadMeshData;
 	ew::createQuad(2, 2, quadMeshData);
+	ew::MeshData debugQuadMeshData;
+	ew::createQuad(.3f, .45f, debugQuadMeshData);
 
 	ew::Mesh cubeMesh(&cubeMeshData);
 	ew::Mesh sphereMesh(&sphereMeshData);
 	ew::Mesh planeMesh(&planeMeshData);
 	ew::Mesh cylinderMesh(&cylinderMeshData);
 	ew::Mesh quadMesh(&quadMeshData);
+	ew::Mesh debugQuadMesh(&debugQuadMeshData);
 
 	//Enable back face culling
 	glEnable(GL_CULL_FACE);
@@ -216,6 +224,8 @@ int main() {
 	planeTransform.scale = glm::vec3(10.0f);
 
 	cylinderTransform.position = glm::vec3(2.0f, 0.0f, 0.0f);
+
+	debugQuadTransform.position = glm::vec3(.5f, 0.5f, 0.0f);
 
 	pointLights[0].color = glm::vec3(1, 1, 1);
 	pointLights[1].color = glm::vec3(0, 1, 1);
@@ -330,22 +340,27 @@ int main() {
 		fbo.Unbind(glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
 		glClearColor(bgColor.r, bgColor.g, bgColor.b, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		//Default framebuffer was cleared at the beginning of the loop
-		
-		/*glActiveTexture(GL_TEXTURE0 + colorBuffer.GetTexture());
-		glBindTexture(GL_TEXTURE_2D, colorBuffer.GetTexture());
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-
-		glActiveTexture(GL_TEXTURE0 + secondColorBuffer.GetTexture());
-		glBindTexture(GL_TEXTURE_2D, secondColorBuffer.GetTexture());
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);*/
 
 		//Draw fullscreen quads with the current shader selected in fbo
 		fbo.SetupShader();
 		quadMesh.draw();
+
+		if (debugQuadEnabled)
+		{
+			glActiveTexture(GL_TEXTURE0 + depthBuffer.GetTexture());
+			glBindTexture(GL_TEXTURE_2D, depthBuffer.GetTexture());
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			
+			blitShader->use();
+			blitShader->setInt("_ColorTex", depthBuffer.GetTexture());
+			blitShader->setVec2("_Offset", glm::vec2(debugQuadTransform.position.x, debugQuadTransform.position.y));
+			debugQuadMesh.draw();
+
+			blitShader->setVec2("_Offset", glm::vec2(0, 0));
+		}
 
 		//Material
 		defaultMat.ExposeImGui();
@@ -372,6 +387,14 @@ int main() {
 		ImGui::SliderFloat("Brightness Threshold", &brightnessThreshold, 0.0f, 1.0f);
 
 		fbo.ExposeImGui();
+
+		ImGui::End();
+
+		//Shadow Mapping
+		ImGui::SetNextWindowSize(ImVec2(0, 0));	//Size to fit content
+		ImGui::Begin("Shadow Mapping");
+
+		ImGui::Checkbox("Enable Debug Quad", &debugQuadEnabled);
 
 		ImGui::End();
 
