@@ -9,8 +9,8 @@
 
 #include "imgui.h"
 
-#include "ColorBuffer.h"
-#include "DepthBuffer.h"
+#include "Texture.h"
+#include "RenderBuffer.h"
 
 #include "Postprocessing/PostprocessEffect.h"
 #include "Postprocessing/GrayscaleEffect.h"
@@ -32,8 +32,8 @@ public:
 	bool IsComplete();
 
 	void Create();
-	void AddColorAttachment(ColorBuffer& buffer, GLenum attachmentNum);
-	void AddDepthAttachment(DepthBuffer& buffer);
+	void AddColorAttachment(Texture& buffer, GLenum attachmentNum);
+	void AddDepthAttachment(RenderBuffer& buffer);
 	void Bind();
 	void Unbind(glm::vec2 viewportDimensions);
 	void Clear(glm::vec3 clearColor);

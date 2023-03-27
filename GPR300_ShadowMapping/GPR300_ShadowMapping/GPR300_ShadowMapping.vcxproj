@@ -142,8 +142,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="EW\Mesh.cpp" />
     <ClCompile Include="EW\Shader.cpp" />
-    <ClCompile Include="Source\ColorBuffer.cpp" />
-    <ClCompile Include="Source\DepthBuffer.cpp" />
     <ClCompile Include="Source\DirectionalLight.cpp" />
     <ClCompile Include="Source\FramebufferObject.cpp" />
     <ClCompile Include="Source\PointLight.cpp" />
@@ -155,6 +153,7 @@
     <ClCompile Include="Source\Postprocessing\GrayscaleEffect.cpp" />
     <ClCompile Include="Source\Postprocessing\InvertEffect.cpp" />
     <ClCompile Include="Source\Postprocessing\PostprocessEffect.cpp" />
+    <ClCompile Include="Source\RenderBuffer.cpp" />
     <ClCompile Include="Source\SpotLight.cpp" />
     <ClCompile Include="Source\Texture.cpp" />
     <ClCompile Include="Source\TextureManager.cpp" />
@@ -175,8 +174,6 @@
     <ClInclude Include="EW\ShapeGen.h" />
     <ClInclude Include="EW\Shader.h" />
     <ClInclude Include="EW\Transform.h" />
-    <ClInclude Include="Source\ColorBuffer.h" />
-    <ClInclude Include="Source\DepthBuffer.h" />
     <ClInclude Include="Source\DirectionalLight.h" />
     <ClInclude Include="Source\FramebufferObject.h" />
     <ClInclude Include="Source\GrayscaleEffect.h" />
@@ -191,6 +188,7 @@
     <ClInclude Include="Source\Postprocessing\GrayscaleEffect.h" />
     <ClInclude Include="Source\Postprocessing\InvertEffect.h" />
     <ClInclude Include="Source\Postprocessing\PostprocessEffect.h" />
+    <ClInclude Include="Source\RenderBuffer.h" />
     <ClInclude Include="Source\SpotLight.h" />
     <ClInclude Include="Source\Texture.h" />
     <ClInclude Include="Source\TextureManager.h" />

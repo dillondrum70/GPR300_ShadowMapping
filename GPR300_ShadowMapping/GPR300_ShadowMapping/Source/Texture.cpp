@@ -2,7 +2,7 @@
 
 #include "stb_image.h"
 
-GLuint Texture::CreateTexture(const char* texFilePath, const char* normFilePath)
+GLuint Texture::CreateTexture(const char* texFilePath)
 {
 	//Textures
 	//////////////////////////
@@ -35,36 +35,32 @@ GLuint Texture::CreateTexture(const char* texFilePath, const char* normFilePath)
 
 	glGenerateMipmap(GL_TEXTURE_2D);
 
-	glActiveTexture(normNumber);
+	return texture;
+}
 
-	//Normal Map
-	//////////////////////////
-	//Create texture name
-	glGenTextures(1, &normalMap);
+GLuint Texture::CreateTexture(unsigned int width, unsigned int height, GLenum format, GLenum type)
+{
+	Destroy();
 
-	//Make it a 2D texture
-	glBindTexture(GL_TEXTURE_2D, normalMap);
+	dimensions = glm::vec2(width, height);
 
-	//Use if texture is vertically flipped
-	//stbi_set_flip_vertically_on_load(true);
+	glActiveTexture(GL_TEXTURE31);
 
-	//Load in our texture data from the file path
-	normalData = stbi_load(normFilePath, &normDimensions.x, &normDimensions.y, &normFileChannels, desiredChannels);
+	glGenTextures(1, &texture);
 
-	//Set texture data
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, dimensions.x, dimensions.y, 0, format, type, normalData);
+	glBindTexture(GL_TEXTURE_2D, texture);
 
-	//Set wrapping behavior
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, verticalWrapMode);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, horizontalWrapMode);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, format, type, NULL);
 
-	//Set filtering behavior
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-
-	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	return texture;
+}
+
+void Texture::Destroy()
+{
+	glDeleteTextures(1, &texture);
 }
 
 void Texture::ExposeImGui()

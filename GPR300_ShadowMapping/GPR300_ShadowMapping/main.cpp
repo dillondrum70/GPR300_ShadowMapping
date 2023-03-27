@@ -189,15 +189,23 @@ int main() {
 
 	//Load in textures and add them to array
 	
-	texManager.AddTexture((ASSET_PATH + TEX_FILENAME_DIAMOND_PLATE).c_str(), (ASSET_PATH + NORM_FILENAME_DIAMOND_PLATE).c_str());
-	texManager.AddTexture((ASSET_PATH + TEX_FILENAME_PAVING_STONES).c_str(), (ASSET_PATH + NORM_FILENAME_PAVING_STONES).c_str());
+	texManager.AddTexture((ASSET_PATH + TEX_FILENAME_DIAMOND_PLATE).c_str());
+	texManager.AddNormalMap((ASSET_PATH + NORM_FILENAME_DIAMOND_PLATE).c_str());
+	texManager.AddTexture((ASSET_PATH + TEX_FILENAME_PAVING_STONES).c_str());
+	texManager.AddNormalMap((ASSET_PATH + NORM_FILENAME_PAVING_STONES).c_str());
 
 	//Set texture samplers
 	for (size_t i = 0; i < texManager.textureCount; i++)
 	{
 		//Set texture sampler to texture unit number
-		litShader.setInt("_Textures[" + std::to_string(i) + "].texSampler", (i * 2));
-		litShader.setInt("_Textures[" + std::to_string(i) + "].normSampler", ((i * 2) + 1));	//Normals stored in back half of the 32 textures OpenGL supports
+		litShader.setInt("_Textures[" + std::to_string(i) + "].texSampler", i);
+		bool hasNormal = i < MAX_NORMALS;
+		litShader.setInt("_Textures[" + std::to_string(i) + "].hasNormal", hasNormal);
+
+		if (hasNormal)
+		{
+			litShader.setInt("_Textures[" + std::to_string(i) + "].normSampler", MAX_TEXTURES + i);	//Normals stored in back portion of the 32 textures OpenGL supports
+		}
 	}
 
 	//Initialize shape transforms
@@ -237,13 +245,13 @@ int main() {
 	directionalLights[7].color = glm::vec3(0, 1, 0);
 
 	//If this is created after all texutres are loaded (and all the textures haven't been used) then it shouldn't overwrite or be overwritten by any textures
-	ColorBuffer colorBuffer;
-	colorBuffer.Create(SCREEN_WIDTH, SCREEN_HEIGHT);
+	Texture colorBuffer;
+	colorBuffer.CreateTexture(SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGBA, GL_FLOAT);
 
-	ColorBuffer secondColorBuffer;
-	secondColorBuffer.Create(SCREEN_WIDTH, SCREEN_HEIGHT);
+	Texture secondColorBuffer;
+	secondColorBuffer.CreateTexture(SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGBA, GL_FLOAT);
 	
-	DepthBuffer depthBuffer;
+	RenderBuffer depthBuffer;
 	depthBuffer.Create(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	FramebufferObject fbo;

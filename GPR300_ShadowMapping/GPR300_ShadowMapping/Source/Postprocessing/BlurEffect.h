@@ -3,7 +3,7 @@
 
 #include "PostprocessEffect.h"
 
-#include "ColorBuffer.h"
+#include "Texture.h"
 
 #include "../EW/Mesh.h"
 
@@ -28,7 +28,7 @@ public:
 protected:
 
 	std::vector<FramebufferObject*> blurFbos;
-	ColorBuffer blurBuffers[2];
+	Texture blurBuffers[2];
 
 	ew::Mesh* _quadMesh;
 

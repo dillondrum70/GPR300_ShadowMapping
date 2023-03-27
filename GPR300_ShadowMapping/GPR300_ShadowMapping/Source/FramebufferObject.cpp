@@ -34,7 +34,7 @@ void FramebufferObject::Create()
 /// </summary>
 /// <param name="buffer">Color buffer to add</param>
 /// <param name="attachmentNum">GL_COLOR_ATTACHMENT<0-8></param>
-void FramebufferObject::AddColorAttachment(ColorBuffer& buffer, GLenum attachmentNum)
+void FramebufferObject::AddColorAttachment(Texture& buffer, GLenum attachmentNum)
 {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentNum, GL_TEXTURE_2D, buffer.GetTexture(), 0);
 
@@ -44,7 +44,7 @@ void FramebufferObject::AddColorAttachment(ColorBuffer& buffer, GLenum attachmen
 }
 
 
-void FramebufferObject::AddDepthAttachment(DepthBuffer& buffer)
+void FramebufferObject::AddDepthAttachment(RenderBuffer& buffer)
 {
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, buffer.GetRenderBuffer());
 

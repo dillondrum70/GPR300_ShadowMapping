@@ -84,6 +84,7 @@ struct Texture
 {
     vec2 scaleFactor;
     vec2 offset;
+    bool hasNormal;
     sampler2D texSampler;
     sampler2D normSampler;
 };
@@ -219,7 +220,12 @@ void main()
     //TODO
     //Multiply by intensity (apply to X and Y value of normal so 0 will have normal pointing straight out in worldspace normal)
     vec2 uv = (vert_out.UV + _Textures[_CurrentTexture].offset) * _Textures[_CurrentTexture].scaleFactor;
-    vec3 normal = (texture(_Textures[_CurrentTexture].normSampler, uv).rgb * 2) - 1;
+    vec3 normal = vec3(0, 0, 1);
+
+    if(_Textures[_CurrentTexture].hasNormal)
+    {
+        normal =  (texture(_Textures[_CurrentTexture].normSampler, uv).rgb * 2) - 1;
+    }
 
     normal *= vec3(_Mat.normalIntensity, _Mat.normalIntensity, 1);
     normal = vert_out.TBN * normal;

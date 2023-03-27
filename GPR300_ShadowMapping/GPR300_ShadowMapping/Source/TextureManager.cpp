@@ -4,21 +4,32 @@ TextureManager::TextureManager()
 {
 	for (int i = 0; i < MAX_TEXTURES; i++)
 	{
-		textures[i] = Texture(GL_TEXTURE0 + (i * 2), GL_TEXTURE0 + (i * 2) + 1);
+		textures[i] = Texture(GL_TEXTURE0 + i);
 	}
 }
 
-Texture TextureManager::AddTexture(const char* texFilePath, const char* normFilePath)
+Texture TextureManager::AddTexture(const char* texFilePath)
 {
-	textures[textureCount] = Texture(GL_TEXTURE0 + (textureCount * 2), GL_TEXTURE0 + (textureCount * 2) + 1);
-	textures[textureCount].CreateTexture(texFilePath, normFilePath);
+	textures[textureCount] = Texture(GL_TEXTURE0 + textureCount);
+	textures[textureCount].CreateTexture(texFilePath);
+
 	glActiveTexture(textures[textureCount].texNumber);
 	glBindTexture(GL_TEXTURE_2D, textures[textureCount].GetTexture());
-
-	glActiveTexture(textures[textureCount].normNumber);
-	glBindTexture(GL_TEXTURE_2D, textures[textureCount].GetNormalMap());
 
 	textureCount++;
 
 	return textures[textureCount - 1];
+}
+
+Texture TextureManager::AddNormalMap(const char* normalFilePath)
+{
+	normals[normalCount] = Texture(GL_TEXTURE0 + MAX_TEXTURES + normalCount);
+	normals[normalCount].CreateTexture(normalFilePath);
+
+	glActiveTexture(normals[normalCount].texNumber);
+	glBindTexture(GL_TEXTURE_2D, normals[normalCount].GetTexture());
+
+	normalCount++;
+
+	return normals[normalCount - 1];
 }

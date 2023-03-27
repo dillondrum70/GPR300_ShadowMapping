@@ -1,6 +1,6 @@
-#include "DepthBuffer.h"
+#include "RenderBuffer.h"
 
-void DepthBuffer::Create(int screenWidth, int screenHeight)
+void RenderBuffer::Create(int screenWidth, int screenHeight)
 {
 	screenDimensions = glm::vec2(screenWidth, screenHeight);
 

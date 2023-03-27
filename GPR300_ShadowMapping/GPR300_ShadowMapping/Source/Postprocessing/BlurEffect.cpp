@@ -77,7 +77,7 @@ void BlurEffect::SetParent(FramebufferObject* parent)
 	//Create buffers based on parent dimensions
 	for (int i = 0; i < 2; i++)
 	{
-		blurBuffers[i].Create(_parent->GetDimensions().x, _parent->GetDimensions().y);
+		blurBuffers[i].CreateTexture(_parent->GetDimensions().x, _parent->GetDimensions().y, GL_RGBA, GL_FLOAT);
 	}
 }
 

@@ -3,7 +3,6 @@
 
 #include "PostprocessEffect.h"
 #include "BlurEffect.h"
-#include "ColorBuffer.h"
 
 #include "../EW/Mesh.h"
 

@@ -11,10 +11,11 @@ class Texture
 {
 private:
 	GLuint texture = 0;
-	GLuint normalMap = 16;
+
+	//Normal map is not required, but this is where the litShader gets the normal map
+	Texture* normalMap = nullptr;
 
 	glm::ivec2 dimensions = glm::ivec2(0);
-	glm::ivec2 normDimensions = glm::ivec2(0);
 
 	int texFileChannels = 0;
 	int normFileChannels = 0;
@@ -39,11 +40,9 @@ private:
 	GLint minFilter = GL_LINEAR;
 
 	unsigned char* textureData = nullptr;
-	unsigned char* normalData = nullptr;
 
 public:
 	GLenum texNumber = GL_TEXTURE0;
-	GLenum normNumber = GL_TEXTURE1;
 
 	glm::vec2 scaleFactor = glm::vec2(1);
 
@@ -53,13 +52,18 @@ public:
 
 	Texture() {}
 
-	Texture(GLenum textureNumber, GLenum normalNumber) : texNumber(textureNumber), normNumber(normalNumber) {}
+	Texture(GLenum textureNumber) : texNumber(textureNumber) {}
 
 	glm::ivec2 GetDimensions() { return dimensions; }
 	GLuint GetTexture() { return texture; }
-	GLuint GetNormalMap() { return normalMap; }
+	Texture* GetNormalMap() { return normalMap; }
 
-	GLuint CreateTexture(const char* texFilePath, const char* normFilePath);
+	void SetNormalMap(Texture* tex) { normalMap = tex; }
+
+	GLuint CreateTexture(const char* texFilePath);
+	GLuint CreateTexture(unsigned int width, unsigned int height, GLenum format, GLenum type);
+
+	void Destroy();
 
 	void ExposeImGui();
 };

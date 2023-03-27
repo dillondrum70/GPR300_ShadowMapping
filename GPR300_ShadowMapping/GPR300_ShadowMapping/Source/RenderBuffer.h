@@ -7,7 +7,7 @@
 
 #include "imgui.h"
 
-class DepthBuffer
+class RenderBuffer
 {
 public:
 
