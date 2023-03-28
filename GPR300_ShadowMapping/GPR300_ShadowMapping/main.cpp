@@ -264,6 +264,7 @@ int main() {
 	Texture shadowDepthBuffer;
 	shadowDepthBuffer.CreateTexture(GL_DEPTH_COMPONENT32F, SHADOWMASK_WIDTH, SHADOWMASK_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT);
 
+
 	FramebufferObject shadowFbo;
 	shadowFbo.Create();
 	shadowFbo.SetDimensions(glm::vec2(SHADOWMASK_WIDTH, SHADOWMASK_HEIGHT));
@@ -276,8 +277,8 @@ int main() {
 	Texture secondColorBuffer;
 	secondColorBuffer.CreateTexture(GL_RGBA, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGBA, GL_FLOAT);
 	
-	Texture depthBuffer;
-	depthBuffer.CreateTexture(GL_DEPTH_COMPONENT32F, SCREEN_WIDTH, SCREEN_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT);
+	RenderBuffer depthBuffer;
+	depthBuffer.Create(SCREEN_WIDTH, SCREEN_HEIGHT);
 	/*RenderBuffer depthBuffer;
 	depthBuffer.Create(SCREEN_WIDTH, SCREEN_HEIGHT);*/
 
@@ -402,18 +403,18 @@ int main() {
 		//Draw debug quad with shadow mask depth buffer
 		if (debugQuadEnabled)
 		{
-			glActiveTexture(GL_TEXTURE0 + depthBuffer.GetTexture());
-			glBindTexture(GL_TEXTURE_2D, depthBuffer.GetTexture());
+			glActiveTexture(GL_TEXTURE0 + shadowDepthBuffer.GetTexture());
+			glBindTexture(GL_TEXTURE_2D, shadowDepthBuffer.GetTexture());
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 
 			depthToColorShader.use();
-			depthToColorShader.setInt("_ColorTex", depthBuffer.GetTexture());
+			depthToColorShader.setInt("_ColorTex", shadowDepthBuffer.GetTexture());
 			depthToColorShader.setVec2("_Offset", glm::vec2(debugQuadTransform.position.x, debugQuadTransform.position.y));
-			depthToColorShader.setFloat("_Near", camera.getNear());
-			depthToColorShader.setFloat("_Far", camera.getFar());
+			depthToColorShader.setFloat("_Near", .001f);
+			depthToColorShader.setFloat("_Far", 2 * shadowFrustumExtents.z);
 			debugQuadMesh.draw();
 		}
 
