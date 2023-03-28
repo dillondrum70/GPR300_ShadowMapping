@@ -16,6 +16,8 @@ public:
 	glm::vec3 getForward();
 	glm::mat4 getProjectionMatrix();
 	glm::mat4 getViewMatrix();
+	inline float getNear()const { return mNearPlane; }
+	inline float getFar()const { return mFarPlane; }
 	//SETTERS
 	inline void setPosition(const glm::vec3 position) { mPosition = position; }
 	inline void setYaw(const float yaw) { mYaw = yaw; };

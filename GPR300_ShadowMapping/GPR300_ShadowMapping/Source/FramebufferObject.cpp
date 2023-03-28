@@ -7,7 +7,7 @@ FramebufferObject::FramebufferObject()
 {
 	id = 0;
 
-	screenDimensions = glm::vec2(0, 0);
+	dimensions = glm::vec2(0, 0);
 }
 
 FramebufferObject::~FramebufferObject()
@@ -36,19 +36,21 @@ void FramebufferObject::Create()
 /// <param name="attachmentNum">GL_COLOR_ATTACHMENT<0-8></param>
 void FramebufferObject::AddColorAttachment(Texture& buffer, GLenum attachmentNum)
 {
+	Bind();
 	glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentNum, GL_TEXTURE_2D, buffer.GetTexture(), 0);
 
 	/*if (screenDimensions == glm::vec2(0))
 	{
 
 	}*/
-	screenDimensions = buffer.GetDimensions();
+	dimensions = buffer.GetDimensions();
 
 	colorAttachments.push_back(buffer.GetTexture());
 }
 
 void FramebufferObject::AddColorAttachment(RenderBuffer& buffer, GLenum attachmentNum)
 {
+	Bind();
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachmentNum, GL_RENDERBUFFER, buffer.GetRenderBuffer());
 
 	colorAttachments.push_back(buffer.GetRenderBuffer());
@@ -57,6 +59,7 @@ void FramebufferObject::AddColorAttachment(RenderBuffer& buffer, GLenum attachme
 
 void FramebufferObject::AddDepthAttachment(Texture& buffer)
 {
+	Bind();
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, buffer.GetTexture(), 0);
 
 	depthAttachments.push_back(buffer.GetTexture());
@@ -65,6 +68,7 @@ void FramebufferObject::AddDepthAttachment(Texture& buffer)
 
 void FramebufferObject::AddDepthAttachment(RenderBuffer& buffer)
 {
+	Bind();
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, buffer.GetRenderBuffer());
 
 	depthAttachments.push_back(buffer.GetRenderBuffer());
@@ -72,7 +76,7 @@ void FramebufferObject::AddDepthAttachment(RenderBuffer& buffer)
 
 void FramebufferObject::Bind()
 {
-	glViewport(0, 0, screenDimensions.x, screenDimensions.y);
+	glViewport(0, 0, dimensions.x, dimensions.y);
 	glBindFramebuffer(GL_FRAMEBUFFER, id);
 	glEnable(GL_DEPTH_TEST);
 }

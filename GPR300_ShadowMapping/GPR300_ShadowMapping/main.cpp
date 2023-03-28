@@ -51,6 +51,9 @@ float deltaTime;
 int SCREEN_WIDTH = 1080;
 int SCREEN_HEIGHT = 720;
 
+int SHADOWMASK_WIDTH = 1024;
+int SHADOWMASK_HEIGHT = 1024;
+
 double prevMouseX;
 double prevMouseY;
 bool firstMouseInput = false;
@@ -94,7 +97,7 @@ float constantAttenuation = 1.f;
 float linearAttenuation = .35f;
 float quadraticAttenuation = .44f;
 
-bool manuallyMoveLights = false;	//If true, allows you to move point lights manually
+bool manuallyMoveLights = true;	//If true, allows you to move point lights manually
 
 bool phong = true;
 
@@ -122,6 +125,9 @@ ew::Transform cylinderTransform;
 ew::Transform lightTransform;
 ew::Transform quadTransform;
 ew::Transform debugQuadTransform;
+
+glm::vec3 shadowFrustumOrigin = glm::vec3(0, 0, 0);
+glm::vec3 shadowFrustumExtents = glm::vec3(3, 3, 5);
 
 int main() {
 	if (!glfwInit()) {
@@ -162,6 +168,7 @@ int main() {
 	Shader unlitShader("shaders/defaultLit.vert", "shaders/unlit.frag");
 
 	Shader depthShader("shaders/depth.vert", "shaders/depth.frag");
+	Shader depthToColorShader("shaders/blit.vert", "shaders/depthToColor.frag");
 
 	ew::MeshData cubeMeshData;
 	ew::createCube(1.0f, 1.0f, 1.0f, cubeMeshData);
@@ -174,7 +181,7 @@ int main() {
 	ew::MeshData quadMeshData;
 	ew::createQuad(2, 2, quadMeshData);
 	ew::MeshData debugQuadMeshData;
-	ew::createQuad(.3f, .45f, debugQuadMeshData);
+	ew::createQuad(.3f, .3f * (SCREEN_WIDTH / (float)SCREEN_HEIGHT), debugQuadMeshData);
 
 	ew::Mesh cubeMesh(&cubeMeshData);
 	ew::Mesh sphereMesh(&sphereMeshData);
@@ -254,6 +261,14 @@ int main() {
 	directionalLights[6].color = glm::vec3(1, 1, 0);
 	directionalLights[7].color = glm::vec3(0, 1, 0);
 
+	Texture shadowDepthBuffer;
+	shadowDepthBuffer.CreateTexture(GL_DEPTH_COMPONENT32F, SHADOWMASK_WIDTH, SHADOWMASK_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT);
+
+	FramebufferObject shadowFbo;
+	shadowFbo.Create();
+	shadowFbo.SetDimensions(glm::vec2(SHADOWMASK_WIDTH, SHADOWMASK_HEIGHT));
+	shadowFbo.AddDepthAttachment(shadowDepthBuffer);
+
 	//If this is created after all texutres are loaded (and all the textures haven't been used) then it shouldn't overwrite or be overwritten by any textures
 	Texture colorBuffer;
 	colorBuffer.CreateTexture(GL_RGBA, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGBA, GL_FLOAT);
@@ -263,7 +278,6 @@ int main() {
 	
 	Texture depthBuffer;
 	depthBuffer.CreateTexture(GL_DEPTH_COMPONENT32F, SCREEN_WIDTH, SCREEN_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT);
-
 	/*RenderBuffer depthBuffer;
 	depthBuffer.Create(SCREEN_WIDTH, SCREEN_HEIGHT);*/
 
@@ -304,6 +318,7 @@ int main() {
 	Shader* bloomShader = new Shader("shaders/blit.vert", "shaders/bloom.frag");
 	BloomEffect bloomEffect = BloomEffect(bloomShader, "Bloom", &blurBloomEffect);
 	fbo.AddEffect(&bloomEffect);
+
 	
 	while (!glfwWindowShouldClose(window)) {
 		processInput(window);
@@ -322,7 +337,18 @@ int main() {
 		deltaTime = time - lastFrameTime;
 		lastFrameTime = time;
 
-		//Bind and clear frame buffer
+		//Set up shadow mask framebuffer object
+		shadowFbo.Bind();
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+
+		//Depth-only pass for shadow mask
+		glm::mat4 lightView = glm::lookAt(shadowFrustumOrigin + (directionalLights[0].dir * shadowFrustumExtents.z), shadowFrustumOrigin, glm::vec3(0, 1, 0));
+		glm::mat4 lightProjection = glm::ortho(-shadowFrustumExtents.x, shadowFrustumExtents.x, -shadowFrustumExtents.y, shadowFrustumExtents.y, 0.1f, shadowFrustumExtents.z * 2.f);
+		drawScene(&depthShader, lightView, lightProjection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
+
+		//Bind and clear main frame buffer
 		fbo.Bind();
 		fbo.Clear(bgColor);
 		GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
@@ -336,30 +362,59 @@ int main() {
 		//Draw light as a small sphere using unlit shader, ironically.
 		drawLights(&unlitShader, view, projection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
 
+		//Draw wireframe cube of shadow frustum
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glDisable(GL_CULL_FACE);
+		unlitShader.use();
+
+		glm::vec3 forward = -glm::normalize(directionalLights[0].dir);
+		glm::vec3 right = glm::cross(glm::vec3(0, 1, 0), forward);
+		glm::vec3 up = glm::cross(forward, right);
+
+		glm::mat4 rot = {
+			right.x, right.y, right.z, 0,
+			up.x, up.y, up.z, 0,          
+			-forward.x, -forward.y, -forward.z, 0,
+			0, 0,0, 1
+		};
+
+		glm::mat4 frustumModel = ew::translate(shadowFrustumOrigin) * 
+			rot *
+			ew::scale(glm::vec3(2 * shadowFrustumExtents.x, 2 * shadowFrustumExtents.y, 2 * shadowFrustumExtents.z));
+
+		unlitShader.setMat4("_Model", frustumModel);
+		unlitShader.setMat4("_View", view);
+		unlitShader.setMat4("_Projection", projection);
+		unlitShader.setVec3("_Color", glm::vec3(1, 1, 1));
+		cubeMesh.draw();
+
+		glEnable(GL_CULL_FACE);
+		glPolygonMode(GL_FRONT_AND_BACK, wireFrame ? GL_LINE : GL_FILL);
+
 		//After drawing, bind to default framebuffer, clear it, and draw the fullscreen quad with the shader
 		fbo.Unbind(glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
 		glClearColor(bgColor.r, bgColor.g, bgColor.b, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		//Draw fullscreen quads with the current shader selected in fbo
 		fbo.SetupShader();
 		quadMesh.draw();
 
+		//Draw debug quad with shadow mask depth buffer
 		if (debugQuadEnabled)
 		{
 			glActiveTexture(GL_TEXTURE0 + depthBuffer.GetTexture());
 			glBindTexture(GL_TEXTURE_2D, depthBuffer.GetTexture());
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-			
-			blitShader->use();
-			blitShader->setInt("_ColorTex", depthBuffer.GetTexture());
-			blitShader->setVec2("_Offset", glm::vec2(debugQuadTransform.position.x, debugQuadTransform.position.y));
-			debugQuadMesh.draw();
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 
-			blitShader->setVec2("_Offset", glm::vec2(0, 0));
+			depthToColorShader.use();
+			depthToColorShader.setInt("_ColorTex", depthBuffer.GetTexture());
+			depthToColorShader.setVec2("_Offset", glm::vec2(debugQuadTransform.position.x, debugQuadTransform.position.y));
+			depthToColorShader.setFloat("_Near", camera.getNear());
+			depthToColorShader.setFloat("_Far", camera.getFar());
+			debugQuadMesh.draw();
 		}
 
 		//Material
@@ -370,7 +425,7 @@ int main() {
 		ImGui::Begin("Settings");
 
 		ImGui::Checkbox("Phong Lighting", &phong);
-		ImGui::Checkbox("Manually Move Lights", &manuallyMoveLights);
+		//ImGui::Checkbox("Manually Move Lights", &manuallyMoveLights);
 		ImGui::Text("Opens option under settings\nin different types of lights\nto change the individual\nposition and/or direction of\nthe lights");
 
 		ImGui::Text("GL Falloff Attenuation");
@@ -395,6 +450,9 @@ int main() {
 		ImGui::Begin("Shadow Mapping");
 
 		ImGui::Checkbox("Enable Debug Quad", &debugQuadEnabled);
+
+		ImGui::SliderFloat3("Shadow Frustum Origin", &shadowFrustumOrigin.x, 0, 10);
+		ImGui::SliderFloat3("Shadow Frustum Extents", &shadowFrustumExtents.x, .01f, 20);
 
 		ImGui::End();
 

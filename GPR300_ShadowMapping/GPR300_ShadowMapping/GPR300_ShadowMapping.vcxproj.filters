@@ -209,5 +209,6 @@
     <None Include="shaders\bloom.frag" />
     <None Include="shaders\depth.vert" />
     <None Include="shaders\depth.frag" />
+    <None Include="shaders\depthToColor.frag" />
   </ItemGroup>
 </Project>

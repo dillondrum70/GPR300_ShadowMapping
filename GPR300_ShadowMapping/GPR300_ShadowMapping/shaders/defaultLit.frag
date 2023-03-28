@@ -89,7 +89,7 @@ struct Texture
     sampler2D normSampler;
 };
 
-const int MAX_TEXTURES = 16;
+const int MAX_TEXTURES = 24;
 uniform Texture _Textures[MAX_TEXTURES];
 uniform int _CurrentTexture;
 

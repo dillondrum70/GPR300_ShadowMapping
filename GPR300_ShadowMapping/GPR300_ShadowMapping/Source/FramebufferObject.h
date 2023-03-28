@@ -28,8 +28,10 @@ public:
 	~FramebufferObject();
 
 	unsigned int GetId() { return id; }
-	glm::vec2 GetDimensions() { return screenDimensions; }
+	glm::vec2 GetDimensions() { return dimensions; }
 	bool IsComplete();
+
+	void SetDimensions(glm::vec2 d) { dimensions = d; }
 
 	void Create();
 	void AddColorAttachment(Texture& buffer, GLenum attachmentNum);
@@ -50,7 +52,7 @@ public:
 private:
 
 	unsigned int id;
-	glm::vec2 screenDimensions;
+	glm::vec2 dimensions;
 
 	std::vector<unsigned int> colorAttachments;
 	std::vector<unsigned int> depthAttachments;

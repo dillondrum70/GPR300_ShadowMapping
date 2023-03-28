@@ -201,6 +201,7 @@
     <None Include="shaders\chromatic.frag" />
     <None Include="shaders\depth.frag" />
     <None Include="shaders\depth.vert" />
+    <None Include="shaders\depthToColor.frag" />
     <None Include="shaders\edgeDetect.frag" />
     <None Include="shaders\grayscale.frag" />
     <None Include="shaders\invert.frag" />
