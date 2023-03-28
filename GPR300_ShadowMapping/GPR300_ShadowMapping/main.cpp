@@ -127,7 +127,7 @@ ew::Transform quadTransform;
 ew::Transform debugQuadTransform;
 
 glm::vec3 shadowFrustumOrigin = glm::vec3(0, 0, 0);
-glm::vec3 shadowFrustumExtents = glm::vec3(3, 3, 5);
+glm::vec3 shadowFrustumExtents = glm::vec3(10, 10, 5);
 float shadowDeathNearPlane = .001f;
 
 int main() {
@@ -350,7 +350,7 @@ int main() {
 		printf("%f, %f, %f\n", point.x, point.y, point.z);
 
 		//Depth-only pass for shadow mask
-		glm::mat4 lightView = glm::lookAt((glm::normalize(directionalLights[0].dir) * shadowFrustumExtents.z), shadowFrustumOrigin, glm::vec3(0, 1, 0));
+		glm::mat4 lightView = glm::lookAt(shadowFrustumOrigin + (glm::normalize(directionalLights[0].dir) * shadowFrustumExtents.z), shadowFrustumOrigin, glm::vec3(0, 1, 0));
 		glm::mat4 lightProjection = glm::ortho(-shadowFrustumExtents.x, shadowFrustumExtents.x, -shadowFrustumExtents.y, shadowFrustumExtents.y, shadowDeathNearPlane, shadowFrustumExtents.z * 2.f);
 		drawScene(&depthShader, lightView, lightProjection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
 
@@ -417,12 +417,12 @@ int main() {
 
 			depthToColorShader.use();
 			depthToColorShader.setInt("_ColorTex", shadowDepthBuffer.GetTexture());
-			depthToColorShader.setVec2("_Offset", glm::vec2(debugQuadTransform.position.x, debugQuadTransform.position.y));
+			//depthToColorShader.setVec2("_Offset", glm::vec2(debugQuadTransform.position.x, debugQuadTransform.position.y));
 			//depthToColorShader.setFloat("_Near", shadowDeathNearPlane);
 			//depthToColorShader.setFloat("_Far", 2 * shadowFrustumExtents.z);
-			depthToColorShader.setFloat("_Width", debugQuadTransform.scale.x * shadowDepthBuffer.GetDimensions().x);
-			depthToColorShader.setFloat("_Height", debugQuadTransform.scale.y * shadowDepthBuffer.GetDimensions().y);
-			depthToColorShader.setMat4("_Model", glm::scale(glm::mat4(1), debugQuadTransform.scale));
+			/*depthToColorShader.setFloat("_Width", debugQuadTransform.scale.x * SCREEN_WIDTH);
+			depthToColorShader.setFloat("_Height", debugQuadTransform.scale.y * SCREEN_HEIGHT);*/
+			depthToColorShader.setMat4("_Model", ew::translate(debugQuadTransform.position) * ew::scale(debugQuadTransform.scale));
 			debugQuadMesh.draw();
 		}
 		
