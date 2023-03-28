@@ -360,6 +360,16 @@ int main() {
 		glm::mat4 view = camera.getViewMatrix();
 		glm::mat4 projection = camera.getProjectionMatrix();
 
+		//Setup shadows in lit
+		litShader.use();
+		glActiveTexture(GL_TEXTURE0 + shadowDepthBuffer.GetTexture());
+		glBindTexture(GL_TEXTURE_2D, shadowDepthBuffer.GetTexture());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		litShader.setInt("_ShadowMap", shadowDepthBuffer.GetTexture());
+		litShader.setMat4("_LightViewProj", lightProjection * lightView);
 		drawScene(&litShader, view, projection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
 
 		//Draw light as a small sphere using unlit shader, ironically.

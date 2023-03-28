@@ -19,7 +19,13 @@ uniform mat4 _Projection;
 
 uniform mat4 _NormalMatrix;
 
+uniform mat4 _LightViewProj;
+
+out vec4 lightSpacePos;
+
 void main(){    
+    lightSpacePos = _LightViewProj * _Model * vec4(vPos, 1);
+
     vert_out.Normal = vNormal;
     vert_out.WorldPos = vec3(_Model * vec4(vPos, 1));
 
