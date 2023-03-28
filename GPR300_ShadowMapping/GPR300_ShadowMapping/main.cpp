@@ -128,6 +128,7 @@ ew::Transform debugQuadTransform;
 
 glm::vec3 shadowFrustumOrigin = glm::vec3(0, 0, 0);
 glm::vec3 shadowFrustumExtents = glm::vec3(3, 3, 5);
+float shadowDeathNearPlane = .001f;
 
 int main() {
 	if (!glfwInit()) {
@@ -181,7 +182,7 @@ int main() {
 	ew::MeshData quadMeshData;
 	ew::createQuad(2, 2, quadMeshData);
 	ew::MeshData debugQuadMeshData;
-	ew::createQuad(.3f, .3f * (SCREEN_WIDTH / (float)SCREEN_HEIGHT), debugQuadMeshData);
+	ew::createQuad(1, 1, debugQuadMeshData);
 
 	ew::Mesh cubeMesh(&cubeMeshData);
 	ew::Mesh sphereMesh(&sphereMeshData);
@@ -233,6 +234,7 @@ int main() {
 	cylinderTransform.position = glm::vec3(2.0f, 0.0f, 0.0f);
 
 	debugQuadTransform.position = glm::vec3(.5f, 0.5f, 0.0f);
+	debugQuadTransform.scale = glm::vec3(.3f, .3f * (SCREEN_WIDTH / (float)SCREEN_HEIGHT), 1);
 
 	pointLights[0].color = glm::vec3(1, 1, 1);
 	pointLights[1].color = glm::vec3(0, 1, 1);
@@ -344,9 +346,12 @@ int main() {
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
 
+		glm::vec3 point = shadowFrustumOrigin + (directionalLights[0].dir * shadowFrustumExtents.z);
+		printf("%f, %f, %f\n", point.x, point.y, point.z);
+
 		//Depth-only pass for shadow mask
-		glm::mat4 lightView = glm::lookAt(shadowFrustumOrigin + (directionalLights[0].dir * shadowFrustumExtents.z), shadowFrustumOrigin, glm::vec3(0, 1, 0));
-		glm::mat4 lightProjection = glm::ortho(-shadowFrustumExtents.x, shadowFrustumExtents.x, -shadowFrustumExtents.y, shadowFrustumExtents.y, 0.1f, shadowFrustumExtents.z * 2.f);
+		glm::mat4 lightView = glm::lookAt((glm::normalize(directionalLights[0].dir) * shadowFrustumExtents.z), shadowFrustumOrigin, glm::vec3(0, 1, 0));
+		glm::mat4 lightProjection = glm::ortho(-shadowFrustumExtents.x, shadowFrustumExtents.x, -shadowFrustumExtents.y, shadowFrustumExtents.y, shadowDeathNearPlane, shadowFrustumExtents.z * 2.f);
 		drawScene(&depthShader, lightView, lightProjection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
 
 		//Bind and clear main frame buffer
@@ -413,11 +418,14 @@ int main() {
 			depthToColorShader.use();
 			depthToColorShader.setInt("_ColorTex", shadowDepthBuffer.GetTexture());
 			depthToColorShader.setVec2("_Offset", glm::vec2(debugQuadTransform.position.x, debugQuadTransform.position.y));
-			depthToColorShader.setFloat("_Near", .001f);
-			depthToColorShader.setFloat("_Far", 2 * shadowFrustumExtents.z);
+			//depthToColorShader.setFloat("_Near", shadowDeathNearPlane);
+			//depthToColorShader.setFloat("_Far", 2 * shadowFrustumExtents.z);
+			depthToColorShader.setFloat("_Width", debugQuadTransform.scale.x * shadowDepthBuffer.GetDimensions().x);
+			depthToColorShader.setFloat("_Height", debugQuadTransform.scale.y * shadowDepthBuffer.GetDimensions().y);
+			depthToColorShader.setMat4("_Model", glm::scale(glm::mat4(1), debugQuadTransform.scale));
 			debugQuadMesh.draw();
 		}
-
+		
 		//Material
 		defaultMat.ExposeImGui();
 		
@@ -452,7 +460,7 @@ int main() {
 
 		ImGui::Checkbox("Enable Debug Quad", &debugQuadEnabled);
 
-		ImGui::SliderFloat3("Shadow Frustum Origin", &shadowFrustumOrigin.x, 0, 10);
+		ImGui::SliderFloat3("Shadow Frustum Origin", &shadowFrustumOrigin.x, -10, 10);
 		ImGui::SliderFloat3("Shadow Frustum Extents", &shadowFrustumExtents.x, .01f, 20);
 
 		ImGui::End();

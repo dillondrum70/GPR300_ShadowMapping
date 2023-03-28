@@ -8,8 +8,13 @@ uniform sampler2D _ColorTex;
 uniform float _Near;
 uniform float _Far;
 
+uniform float _Width;
+uniform float _Height;
+
 void main(){         
-    vec4 col = texture(_ColorTex, TexCoord);
-    float linearDepth = ( 2.0 * _Near ) / ( _Far + _Near - col.r * ( _Far - _Near ) );
-    FragColor = vec4(vec3(linearDepth), 1);
+    vec2 res = gl_FragCoord.xy / vec2(_Width, _Height);
+    FragColor = texture(_ColorTex, res);
+    //vec4 col = texture(_ColorTex, TexCoord);
+    //float linearDepth = ( 2.0 * _Near ) / ( _Far + _Near - col.r * ( _Far - _Near ) );
+    //FragColor = vec4(vec3(linearDepth), 1);
 }

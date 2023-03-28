@@ -8,8 +8,10 @@ out vec2 TexCoord;
 
 uniform vec2 _Offset;
 
+uniform mat4 _Model = mat4(1);
+
 void main()
 {
-	gl_Position = vec4(vPos.x + _Offset.x, vPos.y + _Offset.y, 0, 1);
+	gl_Position = _Model * vec4(vPos.x + _Offset.x, vPos.y + _Offset.y, 0, 1);
 	TexCoord = vTexCoord;
 }
