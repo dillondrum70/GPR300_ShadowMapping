@@ -346,11 +346,8 @@ int main() {
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
 
-		glm::vec3 point = shadowFrustumOrigin + (directionalLights[0].dir * shadowFrustumExtents.z);
-		printf("%f, %f, %f\n", point.x, point.y, point.z);
-
 		//Depth-only pass for shadow mask
-		glm::mat4 lightView = glm::lookAt(shadowFrustumOrigin + (glm::normalize(directionalLights[0].dir) * shadowFrustumExtents.z), shadowFrustumOrigin, glm::vec3(0, 1, 0));
+		glm::mat4 lightView = glm::lookAt(shadowFrustumOrigin - (glm::normalize(directionalLights[0].dir) * shadowFrustumExtents.z), shadowFrustumOrigin, glm::vec3(0, 1, 0));
 		glm::mat4 lightProjection = glm::ortho(-shadowFrustumExtents.x, shadowFrustumExtents.x, -shadowFrustumExtents.y, shadowFrustumExtents.y, shadowDeathNearPlane, shadowFrustumExtents.z * 2.f);
 		drawScene(&depthShader, lightView, lightProjection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
 
@@ -373,20 +370,21 @@ int main() {
 		glDisable(GL_CULL_FACE);
 		unlitShader.use();
 
-		glm::vec3 forward = -glm::normalize(directionalLights[0].dir);
+		/*glm::vec3 forward = -glm::normalize(directionalLights[0].dir);
 		glm::vec3 right = glm::cross(glm::vec3(0, 1, 0), forward);
 		glm::vec3 up = glm::cross(forward, right);
 
 		glm::mat4 rot = {
-			right.x, right.y, right.z, 0,
-			up.x, up.y, up.z, 0,          
-			-forward.x, -forward.y, -forward.z, 0,
+			right.x, up.x, forward.x, 0,
+			right.y, up.y, forward.y, 0,
+			right.z, up.z, forward.z, 0,
 			0, 0,0, 1
-		};
+		};*/
 
 		glm::mat4 frustumModel = ew::translate(shadowFrustumOrigin) * 
-			rot *
+			glm::lookAt(shadowFrustumOrigin, shadowFrustumOrigin + (glm::normalize(directionalLights[0].dir) * shadowFrustumExtents.z), glm::vec3(0, 1, 0)) *
 			ew::scale(glm::vec3(2 * shadowFrustumExtents.x, 2 * shadowFrustumExtents.y, 2 * shadowFrustumExtents.z));
+		
 
 		unlitShader.setMat4("_Model", frustumModel);
 		unlitShader.setMat4("_View", view);

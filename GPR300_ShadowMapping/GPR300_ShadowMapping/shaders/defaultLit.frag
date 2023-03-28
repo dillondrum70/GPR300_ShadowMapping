@@ -161,7 +161,7 @@ void directionalLight(inout vec3 diffuse, inout vec3 specular, vec3 normal)
         vec3 lightDir = normalize(_DirectionalLight[i].dir);
     
         //Diffuse Light
-        diffuse += calculateDiffuse(_Mat.diffuseCoefficient, lightDir, normal, intensityRGB);
+        diffuse += calculateDiffuse(_Mat.diffuseCoefficient, -lightDir, normal, intensityRGB);
     
         //Specular Light
         float angle = 0;    //What dot product to put in for specular (depending on if phong or blinn-phong it changes)
