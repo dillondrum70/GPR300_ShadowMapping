@@ -399,8 +399,10 @@ int main() {
 			0, 0,0, 1
 		};*/
 
-		glm::mat4 frustumModel = ew::translate(shadowFrustumOrigin) * 
-			glm::lookAt(shadowFrustumOrigin, shadowFrustumOrigin + (glm::normalize(directionalLights[0].dir) * shadowFrustumExtents.z), glm::vec3(0, 1, 0)) *
+		glm::vec3 lookAt = glm::eulerAngles(glm::quatLookAt(glm::normalize(directionalLights[0].dir), glm::vec3(0, 1, 0)));
+
+		glm::mat4 frustumModel = ew::translate(shadowFrustumOrigin) *
+			ew::rotateX(lookAt.x) * ew::rotateY(lookAt.y) * ew::rotateZ(lookAt.z) *
 			ew::scale(glm::vec3(2 * shadowFrustumExtents.x, 2 * shadowFrustumExtents.y, 2 * shadowFrustumExtents.z));
 		
 
