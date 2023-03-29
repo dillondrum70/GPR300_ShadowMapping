@@ -127,8 +127,11 @@ ew::Transform quadTransform;
 ew::Transform debugQuadTransform;
 
 glm::vec3 shadowFrustumOrigin = glm::vec3(0, 0, 0);
-glm::vec3 shadowFrustumExtents = glm::vec3(10, 10, 5);
+glm::vec3 shadowFrustumExtents = glm::vec3(10, 10, 10);
 float shadowDeathNearPlane = .001f;
+
+float minBias = .005f;
+float maxBias = .015f;
 
 int main() {
 	if (!glfwInit()) {
@@ -225,7 +228,7 @@ int main() {
 	}
 
 	//Initialize shape transforms
-	cubeTransform.position = glm::vec3(-2.0f, 0.0f, 0.0f);
+	cubeTransform.position = glm::vec3(-2.0f, -.5f, 0.0f);
 	sphereTransform.position = glm::vec3(0.0f, 0.0f, 0.0f);
 
 	planeTransform.position = glm::vec3(0.0f, -1.0f, 0.0f);
@@ -471,6 +474,9 @@ int main() {
 		ImGui::SliderFloat3("Shadow Frustum Origin", &shadowFrustumOrigin.x, -10, 10);
 		ImGui::SliderFloat3("Shadow Frustum Extents", &shadowFrustumExtents.x, .01f, 20);
 
+		ImGui::SliderFloat("Min Bias", &minBias, 0.0f, .1f);
+		ImGui::SliderFloat("Max Bias", &maxBias, 0.0f, .1f);
+
 		ImGui::End();
 
 		//Point Lights
@@ -586,6 +592,8 @@ void drawScene(Shader* shader, glm::mat4 view, glm::mat4 projection, ew::Mesh& c
 	shader->setFloat("_BrightnessThreshold", brightnessThreshold);	//Used in bloom
 	shader->setMat4("_Projection", projection);
 	shader->setMat4("_View", view);
+	shader->setFloat("_MinBias", minBias);
+	shader->setFloat("_MaxBias", maxBias);
 
 	//Textures
 	shader->setInt("_CurrentTexture", currentTextureIndex);

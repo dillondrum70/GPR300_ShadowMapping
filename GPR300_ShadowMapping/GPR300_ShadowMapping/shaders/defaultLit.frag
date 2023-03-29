@@ -96,6 +96,9 @@ uniform int _CurrentTexture;
 in vec4 lightSpacePos;
 uniform sampler2D _ShadowMap;
 
+uniform float _MinBias;
+uniform float _MaxBias;
+
 //Functions
 
 vec3 calculateDiffuse(float coefficient, vec3 lightDir, vec3 worldNormal, vec3 intensity)
@@ -218,15 +221,14 @@ void calculateSpotlight(inout vec3 diffuse, inout vec3 specular, vec3 normal)
     }
 }
 
-float calcShadow(sampler2D shadowMap, vec4 lightSpacePoint)
+float calcShadow(sampler2D shadowMap, vec4 lightSpacePoint, float bias)
 {
     vec3 sampleCoord = lightSpacePoint.xyz / lightSpacePoint.w;
-
     sampleCoord = sampleCoord * .5 + .5;
+    
 
     float mapDepth = texture(shadowMap, sampleCoord.xy).r;
-
-    float depth = sampleCoord.z;
+    float depth = sampleCoord.z - bias;
 
     return step(mapDepth, depth);
 }
@@ -261,7 +263,10 @@ void main()
     //Spotlight diffuse and specular
     calculateSpotlight(diffuse, specular, normal);
 
-    FragColor = texture(_Textures[_CurrentTexture].texSampler, uv) * vec4(ambient + ((diffuse + specular) * 1.0 - calcShadow(_ShadowMap, lightSpacePos)), 1.0f);
+    float bias = max(_MaxBias * (1.0 - dot(normal, -_DirectionalLight[0].dir)), _MinBias);
+    float shadow = 1.0 - calcShadow(_ShadowMap, lightSpacePos, bias);
+
+    FragColor = texture(_Textures[_CurrentTexture].texSampler, uv) * vec4(ambient + ((diffuse + specular) * shadow), 1.0f);
     //FragColor = vec4(vert_out.UV.x, vert_out.UV.y, 0, 1);
     //FragColor = vec4(normal, 1);
     float brightness = dot(FragColor.rgb, _BrightColor);
