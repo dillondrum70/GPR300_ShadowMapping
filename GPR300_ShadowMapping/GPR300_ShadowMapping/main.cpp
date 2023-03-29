@@ -130,8 +130,11 @@ glm::vec3 shadowFrustumOrigin = glm::vec3(0, 0, 0);
 glm::vec3 shadowFrustumExtents = glm::vec3(10, 10, 10);
 float shadowDeathNearPlane = .001f;
 
-float minBias = .005f;
-float maxBias = .015f;
+float minBias = .0f;
+float maxBias = .008f;
+
+bool enablePCF = true;
+int pcfSamples = 1;
 
 int main() {
 	if (!glfwInit()) {
@@ -348,6 +351,7 @@ int main() {
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
+		glCullFace(GL_FRONT);
 
 		//Depth-only pass for shadow mask
 		glm::mat4 lightView = glm::lookAt(shadowFrustumOrigin - (glm::normalize(directionalLights[0].dir) * shadowFrustumExtents.z), shadowFrustumOrigin, glm::vec3(0, 1, 0));
@@ -359,6 +363,7 @@ int main() {
 		fbo.Clear(bgColor);
 		GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 		glDrawBuffers(2, buffers);
+		glCullFace(GL_BACK);
 
 		glm::mat4 view = camera.getViewMatrix();
 		glm::mat4 projection = camera.getProjectionMatrix();
@@ -477,6 +482,9 @@ int main() {
 		ImGui::SliderFloat("Min Bias", &minBias, 0.0f, .1f);
 		ImGui::SliderFloat("Max Bias", &maxBias, 0.0f, .1f);
 
+		ImGui::Checkbox("Enable PCF", &enablePCF);
+		ImGui::SliderInt("Smooth Shadow Samples", &pcfSamples, 1, 10);
+
 		ImGui::End();
 
 		//Point Lights
@@ -594,6 +602,8 @@ void drawScene(Shader* shader, glm::mat4 view, glm::mat4 projection, ew::Mesh& c
 	shader->setMat4("_View", view);
 	shader->setFloat("_MinBias", minBias);
 	shader->setFloat("_MaxBias", maxBias);
+	shader->setInt("_EnablePCF", enablePCF);
+	shader->setInt("_PCFSamples", pcfSamples);
 
 	//Textures
 	shader->setInt("_CurrentTexture", currentTextureIndex);

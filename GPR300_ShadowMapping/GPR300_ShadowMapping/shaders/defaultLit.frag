@@ -99,6 +99,9 @@ uniform sampler2D _ShadowMap;
 uniform float _MinBias;
 uniform float _MaxBias;
 
+uniform bool _EnablePCF;
+uniform int _PCFSamples;
+
 //Functions
 
 vec3 calculateDiffuse(float coefficient, vec3 lightDir, vec3 worldNormal, vec3 intensity)
@@ -175,11 +178,11 @@ void directionalLight(inout vec3 diffuse, inout vec3 specular, vec3 normal)
 
         if(_Phong)    //Phong
         {
-            angle = calculatePhong(eyeDir, -lightDir, normal);
+            angle = calculatePhong(eyeDir, lightDir, normal);
         }
         else    //Blinn-Phong
         {         
-            angle = calculateBlinnPhong(eyeDir, lightDir, normal);
+            angle = calculateBlinnPhong(eyeDir, -lightDir, normal);
         }
     
         specular += calculateSpecular(_Mat.specularCoefficient, angle, _Mat.shininess, intensityRGB);
@@ -226,11 +229,34 @@ float calcShadow(sampler2D shadowMap, vec4 lightSpacePoint, float bias)
     vec3 sampleCoord = lightSpacePoint.xyz / lightSpacePoint.w;
     sampleCoord = sampleCoord * .5 + .5;
     
-
     float mapDepth = texture(shadowMap, sampleCoord.xy).r;
     float depth = sampleCoord.z - bias;
 
     return step(mapDepth, depth);
+}
+
+float calcPCF(sampler2D shadowMap, vec4 lightSpacePoint, float bias, int samples)
+{
+    float totalShadow = 0;
+    vec2 texOffset = 1.0 / textureSize(_ShadowMap, 0);
+
+    vec3 sampleCoord = lightSpacePoint.xyz / lightSpacePoint.w;
+    sampleCoord = sampleCoord * .5 + .5;
+
+    float depth = sampleCoord.z - bias;
+
+    for(int y = -samples; y <= samples; y++)
+    {
+        for(int x = -samples; x <= samples; x++)
+        {
+            vec2 uv = sampleCoord.xy + vec2(x * texOffset.x, y * texOffset.y);
+            totalShadow += step(texture(shadowMap, uv).r, depth - bias);
+        }
+    }
+
+    int sampleSide = samples + samples + 1;
+
+    return totalShadow / (sampleSide * sampleSide);
 }
 
 void main()
@@ -264,9 +290,20 @@ void main()
     calculateSpotlight(diffuse, specular, normal);
 
     float bias = max(_MaxBias * (1.0 - dot(normal, -_DirectionalLight[0].dir)), _MinBias);
-    float shadow = 1.0 - calcShadow(_ShadowMap, lightSpacePos, bias);
+    float shadow = 0;
+    if(_EnablePCF)
+    {
+        shadow = calcPCF(_ShadowMap, lightSpacePos, bias, _PCFSamples);
+    }
+    else
+    {
+        shadow = calcShadow(_ShadowMap, lightSpacePos, bias);
+    }
 
-    FragColor = texture(_Textures[_CurrentTexture].texSampler, uv) * vec4(ambient + ((diffuse + specular) * shadow), 1.0f);
+    FragColor = texture(_Textures[_CurrentTexture].texSampler, uv) * vec4(ambient + ((diffuse + specular) * (1.0 - shadow)), 1.0f);
+
+    
+
     //FragColor = vec4(vert_out.UV.x, vert_out.UV.y, 0, 1);
     //FragColor = vec4(normal, 1);
     float brightness = dot(FragColor.rgb, _BrightColor);
