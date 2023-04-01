@@ -130,10 +130,11 @@ glm::vec3 shadowFrustumOrigin = glm::vec3(0, 0, 0);
 glm::vec3 shadowFrustumExtents = glm::vec3(10, 10, 10);
 float shadowDeathNearPlane = .001f;
 
-float minBias = .0f;
-float maxBias = .008f;
+float minBias = .005f;
+float maxBias = .015f;
 
 bool enablePCF = true;
+bool enableSecondDepth = false;
 int pcfSamples = 1;
 
 int main() {
@@ -351,7 +352,11 @@ int main() {
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
-		//glCullFace(GL_FRONT);
+
+		if (enableSecondDepth)
+		{
+			glCullFace(GL_FRONT);
+		}
 
 		//Depth-only pass for shadow mask
 		glm::mat4 lightView = glm::lookAt(shadowFrustumOrigin - (glm::normalize(directionalLights[0].dir) * shadowFrustumExtents.z), shadowFrustumOrigin, glm::vec3(0, 1, 0));
@@ -363,7 +368,11 @@ int main() {
 		fbo.Clear(bgColor);
 		GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 		glDrawBuffers(2, buffers);
-		//glCullFace(GL_BACK);
+
+		if(enableSecondDepth)
+		{
+			glCullFace(GL_BACK);
+		}
 
 		glm::mat4 view = camera.getViewMatrix();
 		glm::mat4 projection = camera.getProjectionMatrix();
@@ -405,7 +414,7 @@ int main() {
 
 		ew::Transform frustumTrans;
 		frustumTrans.position = shadowFrustumOrigin;
-		frustumTrans.rotation = glm::eulerAngles(glm::quatLookAt(glm::normalize(directionalLights[0].dir), glm::vec3(1, 0, 0)));
+		frustumTrans.rotation = glm::eulerAngles(glm::quatLookAt(glm::normalize(directionalLights[0].dir), glm::vec3(0, 1, 0)));
 		frustumTrans.scale = glm::vec3(2 * shadowFrustumExtents.x, 2 * shadowFrustumExtents.y, 2 * shadowFrustumExtents.z);		
 
 		unlitShader.setMat4("_Model", frustumTrans.getModelMatrix());
@@ -488,6 +497,9 @@ int main() {
 
 		ImGui::Checkbox("Enable PCF", &enablePCF);
 		ImGui::SliderInt("Smooth Shadow Samples", &pcfSamples, 1, 10);
+		ImGui::Spacing();
+		ImGui::Text("Use front or back faces for shadow mapping?");
+		ImGui::Checkbox("Enable Second Depth Mapping", &enableSecondDepth);
 
 		ImGui::End();
 
