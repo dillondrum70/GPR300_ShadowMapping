@@ -228,6 +228,11 @@ float calcShadow(sampler2D shadowMap, vec4 lightSpacePoint, float bias)
 {
     vec3 sampleCoord = lightSpacePoint.xyz / lightSpacePoint.w;
     sampleCoord = sampleCoord * .5 + .5;
+
+    if(sampleCoord.z > 1.0)
+    {
+        return 0.0f;
+    }
     
     float mapDepth = texture(shadowMap, sampleCoord.xy).r;
     float depth = sampleCoord.z - bias;
@@ -242,6 +247,11 @@ float calcPCF(sampler2D shadowMap, vec4 lightSpacePoint, float bias, int samples
 
     vec3 sampleCoord = lightSpacePoint.xyz / lightSpacePoint.w;
     sampleCoord = sampleCoord * .5 + .5;
+
+    if(sampleCoord.z > 1.0)
+    {
+        return 0.0f;
+    }
 
     float depth = sampleCoord.z - bias;
 

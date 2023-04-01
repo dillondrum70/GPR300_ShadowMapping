@@ -374,8 +374,11 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, shadowDepthBuffer.GetTexture());
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		//Set border color to white to not change color
+		glm::vec4 borderCol = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &borderCol.x);
 		litShader.setInt("_ShadowMap", shadowDepthBuffer.GetTexture());
 		litShader.setMat4("_LightViewProj", lightProjection * lightView);
 		drawScene(&litShader, view, projection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
@@ -399,14 +402,12 @@ int main() {
 			0, 0,0, 1
 		};*/
 
-		glm::vec3 lookAt = glm::eulerAngles(glm::quatLookAt(glm::normalize(directionalLights[0].dir), glm::vec3(0, 1, 0)));
+		ew::Transform frustumTrans;
+		frustumTrans.position = shadowFrustumOrigin;
+		frustumTrans.rotation = glm::eulerAngles(glm::quatLookAt(glm::normalize(directionalLights[0].dir), glm::vec3(1, 0, 0)));
+		frustumTrans.scale = glm::vec3(2 * shadowFrustumExtents.x, 2 * shadowFrustumExtents.y, 2 * shadowFrustumExtents.z);		
 
-		glm::mat4 frustumModel = ew::translate(shadowFrustumOrigin) *
-			ew::rotateX(lookAt.x) * ew::rotateY(lookAt.y) * ew::rotateZ(lookAt.z) *
-			ew::scale(glm::vec3(2 * shadowFrustumExtents.x, 2 * shadowFrustumExtents.y, 2 * shadowFrustumExtents.z));
-		
-
-		unlitShader.setMat4("_Model", frustumModel);
+		unlitShader.setMat4("_Model", frustumTrans.getModelMatrix());
 		unlitShader.setMat4("_View", view);
 		unlitShader.setMat4("_Projection", projection);
 		unlitShader.setVec3("_Color", glm::vec3(1, 1, 1));
