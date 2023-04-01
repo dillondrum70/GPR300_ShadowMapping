@@ -351,7 +351,7 @@ int main() {
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
-		glCullFace(GL_FRONT);
+		//glCullFace(GL_FRONT);
 
 		//Depth-only pass for shadow mask
 		glm::mat4 lightView = glm::lookAt(shadowFrustumOrigin - (glm::normalize(directionalLights[0].dir) * shadowFrustumExtents.z), shadowFrustumOrigin, glm::vec3(0, 1, 0));
@@ -363,7 +363,7 @@ int main() {
 		fbo.Clear(bgColor);
 		GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 		glDrawBuffers(2, buffers);
-		glCullFace(GL_BACK);
+		//glCullFace(GL_BACK);
 
 		glm::mat4 view = camera.getViewMatrix();
 		glm::mat4 projection = camera.getProjectionMatrix();
@@ -383,9 +383,6 @@ int main() {
 		litShader.setMat4("_LightViewProj", lightProjection * lightView);
 		drawScene(&litShader, view, projection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
 
-		//Draw light as a small sphere using unlit shader, ironically.
-		drawLights(&unlitShader, view, projection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
-
 		//Draw wireframe cube of shadow frustum
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glDisable(GL_CULL_FACE);
@@ -401,6 +398,10 @@ int main() {
 			right.z, up.z, forward.z, 0,
 			0, 0,0, 1
 		};*/
+
+		//Draw light as a small sphere using unlit shader, ironically.
+		drawLights(&unlitShader, view, projection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
+
 
 		ew::Transform frustumTrans;
 		frustumTrans.position = shadowFrustumOrigin;
