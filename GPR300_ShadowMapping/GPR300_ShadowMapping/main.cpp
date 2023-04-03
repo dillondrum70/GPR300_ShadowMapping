@@ -530,7 +530,7 @@ int main() {
 		ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_FirstUseEver);	//Size to fit content
 		ImGui::Begin("Directional Light");
 
-		ImGui::SliderInt("Light Count", &directionalLightCount, 0, MAX_DIRECTIONAL_LIGHTS);
+		//ImGui::SliderInt("Light Count", &directionalLightCount, 0, MAX_DIRECTIONAL_LIGHTS);
 
 		if (!manuallyMoveLights)
 		{
