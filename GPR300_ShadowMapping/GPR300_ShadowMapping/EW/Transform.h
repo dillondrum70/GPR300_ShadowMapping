@@ -2,6 +2,8 @@
 
 #pragma once
 #include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
+
 #include "ewMath.h"
 
 namespace ew {

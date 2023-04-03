@@ -5,6 +5,7 @@
 #include <glm/matrix.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include <stdio.h>
 
@@ -411,13 +412,12 @@ int main() {
 		//Draw light as a small sphere using unlit shader, ironically.
 		drawLights(&unlitShader, view, projection, cubeMesh, sphereMesh, cylinderMesh, planeMesh);
 
+		glm::mat4 frustPos = glm::translate(glm::mat4(1), shadowFrustumOrigin);
+		glm::mat4 frustRot = glm::toMat4(glm::quatLookAt(glm::normalize(directionalLights[0].dir), glm::vec3(0, 1, 0)));
+		glm::mat4 frustScale = glm::scale(glm::mat4(1), glm::vec3(2 * shadowFrustumExtents.x, 2 * shadowFrustumExtents.y, 2 * shadowFrustumExtents.z));
+		
 
-		ew::Transform frustumTrans;
-		frustumTrans.position = shadowFrustumOrigin;
-		frustumTrans.rotation = glm::eulerAngles(glm::quatLookAt(glm::normalize(directionalLights[0].dir), glm::vec3(0, 1, 0)));
-		frustumTrans.scale = glm::vec3(2 * shadowFrustumExtents.x, 2 * shadowFrustumExtents.y, 2 * shadowFrustumExtents.z);		
-
-		unlitShader.setMat4("_Model", frustumTrans.getModelMatrix());
+		unlitShader.setMat4("_Model", frustPos * frustRot * frustScale);
 		unlitShader.setMat4("_View", view);
 		unlitShader.setMat4("_Projection", projection);
 		unlitShader.setVec3("_Color", glm::vec3(1, 1, 1));
